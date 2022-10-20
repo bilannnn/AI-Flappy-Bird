@@ -1,10 +1,7 @@
 import pygame
 import random
 import os
-import time
 import neat
-import visualize
-import pickle
 
 pygame.font.init()  # init font
 
@@ -285,8 +282,8 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
                                  5)
                 pygame.draw.line(win, (255, 0, 0),
                                  (bird.x + bird.img.get_width() / 2, bird.y + bird.img.get_height() / 2), (
-                                 pipes[pipe_ind].x + pipes[pipe_ind].PIPE_BOTTOM.get_width() / 2,
-                                 pipes[pipe_ind].bottom), 5)
+                                     pipes[pipe_ind].x + pipes[pipe_ind].PIPE_BOTTOM.get_width() / 2,
+                                     pipes[pipe_ind].bottom), 5)
             except:
                 pass
         # draw bird
@@ -349,8 +346,7 @@ def eval_genomes(genomes, config):
 
         pipe_ind = 0
         if len(birds) > 0:
-            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[
-                0].PIPE_TOP.get_width():  # determine whether to use the first or second
+            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():  # determine whether to use the first or second
                 pipe_ind = 1  # pipe on the screen for neural network input
 
         for x, bird in enumerate(birds):  # give each bird a fitness of 0.1 for each frame it stays alive
@@ -361,8 +357,7 @@ def eval_genomes(genomes, config):
             output = nets[birds.index(bird)].activate(
                 (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom)))
 
-            if output[
-                0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
+            if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
                 bird.jump()
 
         base.move()
@@ -403,11 +398,6 @@ def eval_genomes(genomes, config):
                 birds.pop(birds.index(bird))
 
         draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
-
-        # break if score gets large enough
-        '''if score > 20:
-            pickle.dump(nets[0],open("best.pickle", "wb"))
-            break'''
 
 
 def run(config_file):
