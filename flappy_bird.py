@@ -16,13 +16,27 @@ def create_nets_birds_ge(genomes, config):
     return nets, birds, ge
 
 
+def remove_nets_ge_for_died_birds(nets, birds, ge, pipe):
+    for bird in birds:
+        if pipe.collide(bird, WIN) or (bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50):
+            ge[birds.index(bird)].fitness -= 1
+            nets.pop(birds.index(bird))
+            ge.pop(birds.index(bird))
+            birds.pop(birds.index(bird))
+
+
+def activation(net, bird, pipe):
+    # send bird location, top and bottom pipe location and
+    return net.activate((bird.y, abs(bird.y - pipe.height), abs(bird.y - pipe.bottom)))
+
+
 def eval_genomes(genomes, config):
     """
     runs the simulation of the current population of
     birds and sets their fitness based on the distance they
     reach in the game.
     """
-    global WIN, gen
+    global gen
     gen += 1
     score = 0
     base = Base(FLOOR)
@@ -35,69 +49,41 @@ def eval_genomes(genomes, config):
     nets, birds, ge = create_nets_birds_ge(genomes, config)
 
     # start game
-    run = True
-    while run and len(birds) > 0:
+    while len(birds) > 0:
         clock.tick(30)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
-                quit()
-                break
+        check_if_quit()
 
         pipe_id = 0
         if len(birds) > 0:
             if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():
                 pipe_id = 1  # pipe on the screen for neural network input
 
-        for x, bird in enumerate(birds):  # give each bird a fitness of 0.1 for each frame it stays alive
+        for x, bird in enumerate(birds):
             ge[x].fitness += 0.1
             bird.move()
-
-            # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
-            output = nets[birds.index(bird)].activate(
-                (bird.y, abs(bird.y - pipes[pipe_id].height), abs(bird.y - pipes[pipe_id].bottom)))
-
-            if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
+            # determine from network whether to jump or not
+            output = activation(nets[birds.index(bird)], bird, pipes[pipe_id])
+            if output[0] > 0.5:
                 bird.jump()
 
         base.move()
 
-        rem = []
-        add_pipe = False
         for pipe in pipes:
             pipe.move()
-            # check for collision
-            for bird in birds:
-                if pipe.collide(bird, WIN):
-                    ge[birds.index(bird)].fitness -= 1
-                    nets.pop(birds.index(bird))
-                    ge.pop(birds.index(bird))
-                    birds.pop(birds.index(bird))
 
-            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
-                rem.append(pipe)
+            remove_nets_ge_for_died_birds(nets, birds, ge, pipe)
 
             if not pipe.passed and pipe.x < bird.x:
                 pipe.passed = True
-                add_pipe = True
+                score += 1
 
-        if add_pipe:
-            score += 1
-            # can add this line to give more reward for passing through a pipe (not required)
-            for genome in ge:
-                genome.fitness += 5
-            pipes.append(Pipe(WIN_WIDTH))
+                for genome in ge:
+                    genome.fitness += 5
+                pipes.append(Pipe(WIN_WIDTH))
 
-        for r in rem:
-            pipes.remove(r)
-
-        for bird in birds:
-            if bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50:
-                nets.pop(birds.index(bird))
-                ge.pop(birds.index(bird))
-                birds.pop(birds.index(bird))
+            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
+                pipes.remove(pipe)
 
         draw_window(WIN, birds, pipes, base, score, gen, pipe_id)
 

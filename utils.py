@@ -6,8 +6,8 @@ pygame.font.init()  # init font
 WIN_WIDTH = 600
 WIN_HEIGHT = 800
 FLOOR = 730
-STAT_FONT = pygame.font.SysFont("comicsans", 50)
-END_FONT = pygame.font.SysFont("comicsans", 70)
+STAT_FONT = pygame.font.SysFont("dejavuserif", 50)
+END_FONT = pygame.font.SysFont("dejavuserif", 70)
 DRAW_LINES = False
 
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -18,8 +18,7 @@ bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs", "bg.png")
 gen = 0
 
 
-
-def blitRotateCenter(surf, image, topleft, angle):
+def blit_rotate_center(surf, image, topleft, angle):
     """
     Rotate a surface and blit it to the window
     :param surf: the surface to blit to
@@ -83,3 +82,17 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
     win.blit(score_label, (10, 50))
 
     pygame.display.update()
+
+
+def check_if_quit():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+            break
+
+
+def jump(bird):
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+        bird.jump()

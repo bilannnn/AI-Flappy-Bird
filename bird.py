@@ -1,6 +1,6 @@
 import os
 import pygame
-from utils import blitRotateCenter
+from utils import blit_rotate_center
 
 
 class Bird:
@@ -90,7 +90,7 @@ class Bird:
             self.img_count = self.ANIMATION_TIME * 2
 
         # tilt the bird
-        blitRotateCenter(win, self.img, (self.x, self.y), self.tilt)
+        blit_rotate_center(win, self.img, (self.x, self.y), self.tilt)
 
     def get_mask(self):
         """
