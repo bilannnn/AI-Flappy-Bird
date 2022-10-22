@@ -16,13 +16,23 @@ def create_nets_birds_ge(genomes, config):
     return nets, birds, ge
 
 
-def remove_nets_ge_for_died_birds(nets, birds, ge, pipe):
+def remove_nets_ge_for_died_birds(nets, birds, ge):
     for bird in birds:
-        if pipe.collide(bird, WIN) or (bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50):
+        if bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50:
+            remove_nets_ge_bird(nets, birds, ge, birds.index(bird))
+
+
+def remove_nets_ge_for_bump_into_pipe_birds(nets, birds, ge, pipe):
+    for bird in birds:
+        if pipe.collide(bird, WIN):
             ge[birds.index(bird)].fitness -= 1
-            nets.pop(birds.index(bird))
-            ge.pop(birds.index(bird))
-            birds.pop(birds.index(bird))
+            remove_nets_ge_bird(nets, birds, ge, birds.index(bird))
+
+
+def remove_nets_ge_bird(nets, birds, ge, bird_index):
+    nets.pop(bird_index)
+    ge.pop(bird_index)
+    birds.pop(bird_index)
 
 
 def activation(net, bird, pipe):
@@ -72,7 +82,7 @@ def eval_genomes(genomes, config):
         for pipe in pipes:
             pipe.move()
 
-            remove_nets_ge_for_died_birds(nets, birds, ge, pipe)
+            remove_nets_ge_for_bump_into_pipe_birds(nets, birds, ge, pipe)
 
             if not pipe.passed and pipe.x < bird.x:
                 pipe.passed = True
@@ -84,6 +94,8 @@ def eval_genomes(genomes, config):
 
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 pipes.remove(pipe)
+
+        remove_nets_ge_for_died_birds(nets, birds, ge)
 
         draw_window(WIN, birds, pipes, base, score, gen, pipe_id)
 
