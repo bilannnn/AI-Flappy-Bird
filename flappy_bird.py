@@ -5,6 +5,17 @@ from pipe import Pipe
 from utils import *
 
 
+def create_nets_birds_ge(genomes, config):
+    nets, birds, ge = [], [], []
+    for genome_id, genome in genomes:
+        genome.fitness = 0  # start with fitness level of 0
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))
+        ge.append(genome)
+    return nets, birds, ge
+
+
 def eval_genomes(genomes, config):
     """
     runs the simulation of the current population of
@@ -12,28 +23,18 @@ def eval_genomes(genomes, config):
     reach in the game.
     """
     global WIN, gen
-    win = WIN
     gen += 1
+    score = 0
+    base = Base(FLOOR)
+    pipes = [Pipe(WIN_WIDTH)]
+    clock = pygame.time.Clock()
 
     # start by creating lists holding the genome itself, the
     # neural network associated with the genome and the
     # bird object that uses that network to play
-    nets = []
-    birds = []
-    ge = []
-    for genome_id, genome in genomes:
-        genome.fitness = 0  # start with fitness level of 0
-        net = neat.nn.FeedForwardNetwork.create(genome, config)
-        nets.append(net)
-        birds.append(Bird(230, 350))
-        ge.append(genome)
+    nets, birds, ge = create_nets_birds_ge(genomes, config)
 
-    base = Base(FLOOR)
-    pipes = [Pipe(700)]
-    score = 0
-
-    clock = pygame.time.Clock()
-
+    # start game
     run = True
     while run and len(birds) > 0:
         clock.tick(30)
@@ -45,10 +46,10 @@ def eval_genomes(genomes, config):
                 quit()
                 break
 
-        pipe_ind = 0
+        pipe_id = 0
         if len(birds) > 0:
-            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():  # determine whether to use the first or second
-                pipe_ind = 1  # pipe on the screen for neural network input
+            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():
+                pipe_id = 1  # pipe on the screen for neural network input
 
         for x, bird in enumerate(birds):  # give each bird a fitness of 0.1 for each frame it stays alive
             ge[x].fitness += 0.1
@@ -56,7 +57,7 @@ def eval_genomes(genomes, config):
 
             # send bird location, top pipe location and bottom pipe location and determine from network whether to jump or not
             output = nets[birds.index(bird)].activate(
-                (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom)))
+                (bird.y, abs(bird.y - pipes[pipe_id].height), abs(bird.y - pipes[pipe_id].bottom)))
 
             if output[0] > 0.5:  # we use a tanh activation function so result will be between -1 and 1. if over 0.5 jump
                 bird.jump()
@@ -69,7 +70,7 @@ def eval_genomes(genomes, config):
             pipe.move()
             # check for collision
             for bird in birds:
-                if pipe.collide(bird, win):
+                if pipe.collide(bird, WIN):
                     ge[birds.index(bird)].fitness -= 1
                     nets.pop(birds.index(bird))
                     ge.pop(birds.index(bird))
@@ -98,7 +99,7 @@ def eval_genomes(genomes, config):
                 ge.pop(birds.index(bird))
                 birds.pop(birds.index(bird))
 
-        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
+        draw_window(WIN, birds, pipes, base, score, gen, pipe_id)
 
 
 def run(config_file):
